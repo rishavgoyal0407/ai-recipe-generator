@@ -19,7 +19,7 @@ class Recipe {
             // insert recipe
             const recipeResult = await client.query(
                 `INSERT INTO recipes (user_id , name,description,cuisine_type,difficulty,prep_time,cook_time,servings,instructions,dietary_tags,user_notes,image_url)
-                VALUES($1,$2,$3.$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
                 RETURNING *`, [userId, name, description, cuisine_type, difficulty, prep_time, cook_time, servings, JSON.stringify(instructions), dietary_tags, user_notes, image_url]
             );
 
@@ -27,10 +27,11 @@ class Recipe {
 
             // insert ingredients 
             if (ingredients.length > 0) {
-                const ingredientValues = ingredients.map((ing, idx) => {
-                    `($1,$${idx * 3 + 2},$${idx * 3 + 2},$${idx * 3 + 4})`
-                }
-                ).join(', ');
+                const ingredientValues = ingredients
+                    .map((ing, idx) => {
+                        return `($1,$${idx*3+2},$${idx*3+3},$${idx*3+4})`;
+                    })
+                    .join(", ");
 
                 const ingredientParams = [recipe.id];
                 ingredients.forEach(ing => {
@@ -51,7 +52,7 @@ class Recipe {
             if (nutrition && Object.keys(nutrition).length > 0) {
                 await client.query(
                     `INSERT INTO recipe_nutrition (recipe_id,calories,protein,carbs,fats,fiber) VALUES ($1,$2,$3,$4,$5,$6)`,
-                    [recipe.id, nutrition.calories, nutrition.carbs, nutrition.fats, nutrition.fiber]
+                    [recipe.id, nutrition.calories,nutrition.protein, nutrition.carbs, nutrition.fats, nutrition.fiber]
                 )
             }
 
@@ -93,7 +94,7 @@ class Recipe {
 
         // get nutrition
         const nutritionResult = await db.query(
-            'SELECT calories ,proteins ,carbs ,fats,fiber FROM recipe_nutrition WHERE recipe_id=$1',
+            'SELECT calories ,protein,carbs ,fats,fiber FROM recipe_nutrition WHERE recipe_id=$1',
             [id]
         );
 
@@ -126,7 +127,7 @@ class Recipe {
         if (filters.difficulty) {
             paramCount++;
             query += ` AND r.difficulty =$${paramCount}`;
-            params.push(filter.difficulty)
+            params.push(filters.difficulty)
         }
 
         if (filters.dietary_tags) {
@@ -153,7 +154,7 @@ class Recipe {
         const limit = filters.limit || 20;
         const offset = filters.offset || 0;
         paramCount++;
-        query += ` LIMIT ${paramCount}`;
+        query += ` LIMIT $${paramCount}`;
         params.push(limit);
         paramCount++;
         query += ` OFFSET $${paramCount}`;
@@ -183,7 +184,7 @@ class Recipe {
 
         const result = await db.query(
             `UPDATE recipes SET
-            name =COALESCE($,name),
+            name =COALESCE($1,name),
             description=COALESCE($2,description),
             cuisine_type=COALESCE($3,cuisine_type),
             difficulty=COALESCE($4,difficulty),
@@ -217,7 +218,7 @@ class Recipe {
 
         const result = await db.query(
             `SELECT COUNT(*)  as total_recipes,
-        COUNT(DISTINCT cuisine_type) as cuisine_type_count
+        COUNT(DISTINCT cuisine_type) as cuisine_type_count,
         AVG(cook_time) as avg_cook_time
         FROM recipes WHERE user_id=$1`,
             [userId]

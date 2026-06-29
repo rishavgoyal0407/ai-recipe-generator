@@ -5,7 +5,7 @@ class PantryItem {
     // create new pantry item
 
     static async create(userId, itemData) {
-        const { name, quality, unit, category, expiry_date, is_running_low = false } = itemsData;
+        const { name, quantity, unit, category, expiry_date, is_running_low = false } = itemData;
 
 
         const result = await db.query(
@@ -79,10 +79,11 @@ class PantryItem {
 
         const result = await db.query(
             `UPDATE pantry_items 
-            SET name=COALESCE($1,quantity)
-            unit=COALESCE($3,unit)
-            category=COALESCE($4,category)
-            expiry_date=COALESCE($5,expiry_date)
+            SET name=COALESCE($1,name),
+            quantity=COALESCE($2,quantity),
+            unit=COALESCE($3,unit),
+            category=COALESCE($4,category),
+            expiry_date=COALESCE($5,expiry_date),
             is_running_low=COALESCE($6,is_running_low)
             WHERE id=$7 AND user_id=$8
             RETURNING *`,
@@ -108,7 +109,7 @@ class PantryItem {
             `SELECT 
             COUNT(*) as total_items,
             COUNT(DISTINCT category) as total_categories,
-            COUNT(*) FILTER (WHERE is_running_low =true) as running_low_count
+            COUNT(*) FILTER (WHERE is_running_low =true) as running_low_count,
             COUNT(*) FILTER (WHERE expiry_date <=CURRENT_DATE + INTERVAL '7 days' AND expiry_date >=CURRENT_DATE) as expiring_soon_count
             FROM pantry_items
             WHERE user_id=$1`,
