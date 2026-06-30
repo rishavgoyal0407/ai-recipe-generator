@@ -191,4 +191,49 @@ class ShoppingList {
 
         return result.rows;
     }
+
+    // add checked items to pantry
+
+    static async addCheckedToPantry(userId){
+        const client =await db.pool.connect();
+
+        try {
+
+            await client.query('BEGGIN');
+
+            // get checked items
+
+            const checkedItems=await client.query(
+                'SELECT *FROM shopping_list_items WHERE user_id =$1 AND is_checked=true',
+                [userId]
+            );
+
+            // add to pantry
+
+            for(const item of checkedItems.rows){
+                await client.query(
+                    `INSERT INTO pantry_items (user_id,name,quantity,unit,category)
+                    VALUES ($1,$2,$3,$4,$5)`,
+                    [userId,item.ingredient_name,item.quantity,item.unit,item,category]
+                );
+            }
+            
+            // delete checked items from shopping list
+
+            await client.query(
+                'DELETE FROM shopping_list_items WHERE user_id =$1 AND is_checked=true',
+                [userId]
+            )
+
+            await client.query('COMMIT');
+            return checkedItems.rows;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally{
+            client.release();
+        }
+    }
 }
+
+export default ShoppingList;
