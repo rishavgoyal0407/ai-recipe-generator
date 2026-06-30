@@ -65,7 +65,7 @@ class ShoppingList {
 
             await client.query('COMMIT');
 
-            return await this.findbyUserId(userId);
+            return await this.findByUserId(userId);
 
         } catch (error) {
 
@@ -95,7 +95,7 @@ class ShoppingList {
 
     // get all shopping list items for user
 
-    static async findbyUserId(userId) {
+    static async findByUserId(userId) {
         const result = await db.query(
             `SELECT * FROM shopping_list_items
             WHERE user_id =$1
@@ -134,9 +134,9 @@ class ShoppingList {
         const result = await db.query(
             `UPDATE shopping_list_items 
             SET ingredient_name = COALESCE($1,ingredient_name),
-            quantity= COALESCE($2,quantity)
-            unit=COALESCE($3,unit)
-            category=COALESCE($4,category)
+            quantity= COALESCE($2,quantity),
+            unit=COALESCE($3,unit),
+            category=COALESCE($4,category),
             is_checked=COALESCE($5,is_checked)
             WHERE id=$6 AND user_id=$7
             RETURNING *`,
@@ -199,12 +199,12 @@ class ShoppingList {
 
         try {
 
-            await client.query('BEGGIN');
+            await client.query('BEGIN');
 
             // get checked items
 
             const checkedItems=await client.query(
-                'SELECT *FROM shopping_list_items WHERE user_id =$1 AND is_checked=true',
+                'SELECT * FROM shopping_list_items WHERE user_id =$1 AND is_checked=true',
                 [userId]
             );
 
@@ -214,7 +214,7 @@ class ShoppingList {
                 await client.query(
                     `INSERT INTO pantry_items (user_id,name,quantity,unit,category)
                     VALUES ($1,$2,$3,$4,$5)`,
-                    [userId,item.ingredient_name,item.quantity,item.unit,item,category]
+                    [userId,item.ingredient_name,item.quantity,item.unit,item.category]
                 );
             }
             
