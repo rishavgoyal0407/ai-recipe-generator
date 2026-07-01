@@ -1,0 +1,125 @@
+import dotenv from 'dotenv'
+import { GoogleGenAI } from "@google/genai"
+
+dotenv.config();
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+if (!process.env.GEMINI_API_KEY) {
+    console.log('WARNING GEMINI_API_KEY is not set.AI features will not work.');
+}
+
+export const generateRecipe = async ({ ingredients, dietaryRestrictions = [], cuisine_type = 'any', servings = 4, cookingTime = 'medium' }) => {
+    const dietaryInfo = dietaryRestrictions.length > 0 ? `Dietary restrictions  :${dietaryRestrictions.join(', ')}` : 'No dietary restrictions';
+
+    const timeGuide = {
+        quick: 'under 30 minutes',
+        medium: '30-60 minutes',
+        long: 'over 60 minutes'
+    };
+
+    const prompt = `Generate a detailed recipe with the following requirements:
+    Ingredients available:${ingredients.join(', ')}
+    ${dietaryInfo}
+    Cuisine type: ${cuisine_type}
+    Servings:${servings}
+    Cooking time:${timeGuide[cookingTime] || 'any'}
+    
+    Please provide a complete recipe in the following JSON format (return ONLY valid JSON , no markdown):
+    {
+    "name":"Recipe name",
+    "description":"Brief description of the dish",
+    "cuisineType":"${cuisine_type}",
+    "difficulty":"easy |medium|hard",
+    "preTime":number  (in minutes),
+    "cookTime" : number (in minutes),
+    "servings":${servings},
+    "ingredients":[
+    {"name":"ingredient name","quantity":number ,"unit" :"unit of measurement"}
+    ],
+    "instructions":[
+    "Step 1 description",
+    "Step 2 description"
+    ],
+    "dietaryTags":["vegetarian","gluten-free",etc.],
+    "nutrition":{
+    "calories":number,
+    "protein":number (grams),
+    "carbs":number (grams),
+    "fats":number (grams),
+    "fiber":number (grams)
+    },
+    "cookingTips":["Tip 1","Tip 2"]
+    }
+    
+    Make sure the recipe is creative,delicious,and uses the provided ingredients effectively.
+    `
+}
+
+try {
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+    })
+
+    const generatedText = respone.text.trim();
+
+    // remove markdown code blocks if present 
+
+    let jsonText = generatedText;
+    if (jsonText.startsWith('```json')) {
+        jsonText = jsonText
+            .replace(/```json\r?\n/g, '')
+            .replace(/\r?\n```$/g, '');
+    } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/```\n?/g, '');
+
+    }
+
+    const recipe = JSON.parse(jsonText); // string to javascript object
+    return recipe;
+} catch (error) {
+    console.error('Gemini API error:', error);
+    throw new Error('Failed to generate recipe.Please try again');
+}
+
+export const generatePantrySuggestions = async (pantryItems, expiringItems = []) => {
+    const ingredients = pantryItems.map(item => item.name).join(', ');
+    const expiringText = expiringItems.length > 0
+        ? `\nPriority ingredients (expiring soon) :${expiringItems.join(', ')}` : '';
+
+        const prompt =`Based on these available ingredients:${ingredients}${expiringText}
+        
+        Suggest 3 creative recipe ideas that use these ingredients .Return ONLY a JSON array of strings (no markdown):
+        ["Recipe idea 1","Recipe idea 2","Recipe idea 3"]
+        
+        Each suggestion should be a brief ,appetizing description(1-2 sentences).`;
+
+
+        try {
+            const response=await ai.models.generateContent({
+                model:"gemini-2.5-flash",
+                contents:prompt
+            })
+
+            let generatedText=response.text.trim();
+
+            //remove markdown if present
+            if(generatedText.startsWith('```json')){
+                generatedText=generatedText.replace(/```json\n?/g,'').replace(/```\n?$/g,'');
+            }else if(generatedText.startsWith('```')){
+                generatedText=generatedText.replace(/```\n?/g,'');
+
+            }
+
+            const suggestions=JSON.parse(generatedText);
+            return suggestions;
+        } catch (error) {
+
+            console.error('Gemini API error' ,error);
+            throw new Error('Failed to generate suggestions');
+            
+        }
+}
+
+
