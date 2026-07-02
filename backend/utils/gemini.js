@@ -122,4 +122,34 @@ export const generatePantrySuggestions = async (pantryItems, expiringItems = [])
         }
 }
 
+export const generateCookingTips=async (recipe) => {
+  const prompt=`For this recipe:"${recipe.name}"
+  Ingredients ${recipe.ingredients?.map(i=>i.name).join(', ') || 'N/A'}
+  provide 3-5 helpful cooking tips to make this recipe better.Return ONLY a JSON array of strings(no markdown):
+  ["Tip 1","Tip 2","Tip 3"]`;
 
+  try {
+    const response =await ai.models.generateContent({
+        model:"gemini-2.5-flash",
+        contents:prompt
+    })
+
+    let generatedText=response.text.trim();
+
+    if(generatedText.startsWith('```json')){
+        generatedText=generatedText.replace(/```json\n?/g,'').replace(/```\n?$/g,'');
+    }else if (generatedText.startsWith('```')){
+        generatedText=generatedText.replace(/```\n?/g,'');
+    }
+
+    const tips=JSON.parse(generatedText);
+    return tips;
+  } catch (error) {
+    console.error('Gemini API error:',error);
+    return ['Cook with love and patience'];
+  }
+}
+
+export default {
+    generateRecipe,generatePantrySuggestions,generateCookingTips
+};
