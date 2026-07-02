@@ -142,9 +142,10 @@ class Recipe {
             params.push(filters.max_cook_time);
         }
 
-        // Sorting 
+        // Sorting — whitelist allowed columns to prevent SQL injection
 
-        const sortBy = filters.sort_by || 'created_at';
+        const allowedSortColumns = ['created_at', 'name', 'cook_time', 'prep_time', 'difficulty', 'cuisine_type', 'updated_at'];
+        const sortBy = allowedSortColumns.includes(filters.sort_by) ? filters.sort_by : 'created_at';
         const sortOrder = filters.sort_order === 'asc' ? 'ASC' : 'DESC';
         query += ` ORDER BY r.${sortBy} ${sortOrder}`;
 

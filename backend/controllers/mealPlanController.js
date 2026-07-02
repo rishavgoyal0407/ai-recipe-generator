@@ -46,7 +46,7 @@ export const getWeeklyMealPlan = async (req, res, next) => {
 
 export const getUpcomingMeals = async (req, res, next) => {
     try {
-        const limit = pareInt(req.query.limit) || 5;
+        const limit = parseInt(req.query.limit) || 5;
         const meals = await MealPlan.getUpcoming(req.user.id, limit);
 
         res.json({

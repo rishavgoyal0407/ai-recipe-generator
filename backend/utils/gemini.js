@@ -54,33 +54,34 @@ export const generateRecipe = async ({ ingredients, dietaryRestrictions = [], cu
     
     Make sure the recipe is creative,delicious,and uses the provided ingredients effectively.
     `
-}
 
-try {
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-    })
 
-    const generatedText = respone.text.trim();
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        })
 
-    // remove markdown code blocks if present 
+        const generatedText = response.text.trim();
 
-    let jsonText = generatedText;
-    if (jsonText.startsWith('```json')) {
-        jsonText = jsonText
-            .replace(/```json\r?\n/g, '')
-            .replace(/\r?\n```$/g, '');
-    } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/```\n?/g, '');
+        // remove markdown code blocks if present 
 
+        let jsonText = generatedText;
+        if (jsonText.startsWith('```json')) {
+            jsonText = jsonText
+                .replace(/```json\r?\n/g, '')
+                .replace(/\r?\n```$/g, '');
+        } else if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/```\n?/g, '');
+
+        }
+
+        const recipe = JSON.parse(jsonText); // string to javascript object
+        return recipe;
+    } catch (error) {
+        console.error('Gemini API error:', error);
+        throw new Error('Failed to generate recipe.Please try again');
     }
-
-    const recipe = JSON.parse(jsonText); // string to javascript object
-    return recipe;
-} catch (error) {
-    console.error('Gemini API error:', error);
-    throw new Error('Failed to generate recipe.Please try again');
 }
 
 export const generatePantrySuggestions = async (pantryItems, expiringItems = []) => {
@@ -88,7 +89,7 @@ export const generatePantrySuggestions = async (pantryItems, expiringItems = [])
     const expiringText = expiringItems.length > 0
         ? `\nPriority ingredients (expiring soon) :${expiringItems.join(', ')}` : '';
 
-        const prompt =`Based on these available ingredients:${ingredients}${expiringText}
+    const prompt = `Based on these available ingredients:${ingredients}${expiringText}
         
         Suggest 3 creative recipe ideas that use these ingredients .Return ONLY a JSON array of strings (no markdown):
         ["Recipe idea 1","Recipe idea 2","Recipe idea 3"]
@@ -96,60 +97,63 @@ export const generatePantrySuggestions = async (pantryItems, expiringItems = [])
         Each suggestion should be a brief ,appetizing description(1-2 sentences).`;
 
 
-        try {
-            const response=await ai.models.generateContent({
-                model:"gemini-2.5-flash",
-                contents:prompt
-            })
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt
+        })
 
-            let generatedText=response.text.trim();
+        let generatedText = response.text.trim();
 
-            //remove markdown if present
-            if(generatedText.startsWith('```json')){
-                generatedText=generatedText.replace(/```json\n?/g,'').replace(/```\n?$/g,'');
-            }else if(generatedText.startsWith('```')){
-                generatedText=generatedText.replace(/```\n?/g,'');
-
-            }
-
-            const suggestions=JSON.parse(generatedText);
-            return suggestions;
-        } catch (error) {
-
-            console.error('Gemini API error' ,error);
-            throw new Error('Failed to generate suggestions');
-            
+        //remove markdown if present
+        if (generatedText.startsWith('```json')) {
+            generatedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+        } else if (generatedText.startsWith('```')) {
+            generatedText = generatedText
+                .replace(/```json\r?\n/g, '')
+                .replace(/\r?\n```$/g, '');
         }
+
+        const suggestions = JSON.parse(generatedText);
+        return suggestions;
+    } catch (error) {
+
+        console.error('Gemini API error', error);
+        throw new Error('Failed to generate suggestions');
+
+    }
 }
 
-export const generateCookingTips=async (recipe) => {
-  const prompt=`For this recipe:"${recipe.name}"
-  Ingredients ${recipe.ingredients?.map(i=>i.name).join(', ') || 'N/A'}
+export const generateCookingTips = async (recipe) => {
+    const prompt = `For this recipe:"${recipe.name}"
+  Ingredients ${recipe.ingredients?.map(i => i.name).join(', ') || 'N/A'}
   provide 3-5 helpful cooking tips to make this recipe better.Return ONLY a JSON array of strings(no markdown):
   ["Tip 1","Tip 2","Tip 3"]`;
 
-  try {
-    const response =await ai.models.generateContent({
-        model:"gemini-2.5-flash",
-        contents:prompt
-    })
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt
+        })
 
-    let generatedText=response.text.trim();
+        let generatedText = response.text.trim();
 
-    if(generatedText.startsWith('```json')){
-        generatedText=generatedText.replace(/```json\n?/g,'').replace(/```\n?$/g,'');
-    }else if (generatedText.startsWith('```')){
-        generatedText=generatedText.replace(/```\n?/g,'');
+        if (generatedText.startsWith('```json')) {
+            generatedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+        } else if (generatedText.startsWith('```')) {
+            generatedText = generatedText
+                .replace(/```json\r?\n/g, '')
+                .replace(/\r?\n```$/g, '');
+        }
+
+        const tips = JSON.parse(generatedText);
+        return tips;
+    } catch (error) {
+        console.error('Gemini API error:', error);
+        return ['Cook with love and patience'];
     }
-
-    const tips=JSON.parse(generatedText);
-    return tips;
-  } catch (error) {
-    console.error('Gemini API error:',error);
-    return ['Cook with love and patience'];
-  }
 }
 
 export default {
-    generateRecipe,generatePantrySuggestions,generateCookingTips
+    generateRecipe, generatePantrySuggestions, generateCookingTips
 };

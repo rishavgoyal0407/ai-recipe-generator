@@ -33,6 +33,16 @@ app.use('/api/recipes',recipeRouter);
 app.use('/api/meal-plans',mealRouter);
 app.use('/api/shopping-list',shoppingRouter);
 
+
+// Global error handler — catches all next(error) calls from controllers
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error'
+  });
+});
+
 const PORT=process.env.PORT || 8000;
 
 

@@ -1,8 +1,9 @@
-# /*
+/*
 
-# AI RECIPE GENERATOR DATABASE SCHEMA
+AI RECIPE GENERATOR DATABASE SCHEMA
 
-## DATABASE PURPOSE
+DATABASE PURPOSE
+----------------
 
 This database powers an AI-based recipe generation platform.
 
@@ -16,7 +17,8 @@ Main Features Supported:
 6. Meal Planning
 7. Shopping List Generation
 
-## DATABASE RELATIONSHIPS
+DATABASE RELATIONSHIPS
+----------------------
 
 users
 │
@@ -33,7 +35,8 @@ users
 │
 └── shopping_list_items
 
-## DESIGN PRINCIPLES
+DESIGN PRINCIPLES
+-----------------
 
 • UUIDs are used instead of integer IDs for security.
 • Foreign keys maintain data integrity.
@@ -44,9 +47,10 @@ users
 
 */
 
-# /*
+/*
 
-# UUID EXTENSION
+UUID EXTENSION
+--------------
 
 WHY IS THIS NEEDED?
 
@@ -80,11 +84,13 @@ UUIDs are:
 */
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-# /*
+/*
+===============================================================================
+TABLE: users
+===============================================================================
 
-# TABLE: users
-
-## PURPOSE
+PURPOSE
+-------
 
 Stores authentication and profile information for every user.
 
@@ -93,11 +99,12 @@ A user account is the root entity of the entire application.
 Almost every table in the system eventually connects back
 to a user record.
 
-## BUSINESS EXAMPLES
+BUSINESS EXAMPLES
+-----------------
 
 User:
 John Doe
-[john@gmail.com](mailto:john@gmail.com)
+john@gmail.com
 
 This user may have:
 
@@ -107,7 +114,8 @@ This user may have:
 • Shopping Lists
 • Food Preferences
 
-## RELATIONSHIPS
+RELATIONSHIPS
+-------------
 
 users
 │
@@ -117,106 +125,109 @@ users
 ├── meal_plans
 └── shopping_list_items
 
-## IMPORTANT RULES
+IMPORTANT RULES
+---------------
 
 1. Every user must have a unique email.
 2. Passwords are stored as hashes, never plain text.
 3. User records must be uniquely identifiable.
 4. Creation and update timestamps are tracked.
-   ===============================================================================
-   */
-   CREATE TABLE IF NOT EXISTS users(
+===============================================================================
+*/
+CREATE TABLE IF NOT EXISTS users(
 
-   /*
-   Unique identifier for each user.
+    /*
+    Unique identifier for each user.
 
-   WHY?
+    WHY?
 
-   Email addresses can change.
+    Email addresses can change.
 
-   IDs should never change.
+    IDs should never change.
 
-   Therefore every user gets a permanent UUID.
+    Therefore every user gets a permanent UUID.
 
-   Example:
+    Example:
 
-   550e8400-e29b-41d4-a716-446655440000
-   */
-   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    550e8400-e29b-41d4-a716-446655440000
+    */
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-   /*
-   Primary login identifier.
+    /*
+    Primary login identifier.
 
-   WHY UNIQUE?
+    WHY UNIQUE?
 
-   Two users must never share the same email.
+    Two users must never share the same email.
 
-   Authentication depends on this.
+    Authentication depends on this.
 
-   Password resets also depend on this.
+    Password resets also depend on this.
 
-   Example:
+    Example:
 
-   [john@gmail.com](mailto:john@gmail.com)
-   */
-   email VARCHAR(55) UNIQUE NOT NULL,
+    john@gmail.com
+    */
+    email VARCHAR(55) UNIQUE NOT NULL,
 
-   /*
-   Stores encrypted password.
+    /*
+    Stores encrypted password.
 
-   NEVER store plain text passwords.
+    NEVER store plain text passwords.
 
-   Bad:
-   password123
+    Bad:
+    password123
 
-   Good:
-   $2a$10$Q8x...
+    Good:
+    $2a$10$Q8x...
 
-   Generated using bcrypt.
-   */
-   password_hash VARCHAR(255) NOT NULL,
+    Generated using bcrypt.
+    */
+    password_hash VARCHAR(255) NOT NULL,
 
-   /*
-   User's display name.
+    /*
+    User's display name.
 
-   Used throughout the application UI.
+    Used throughout the application UI.
 
-   Example:
-   John Doe
-   */
-   name VARCHAR(255) NOT NULL,
+    Example:
+    John Doe
+    */
+    name VARCHAR(255) NOT NULL,
 
-   /*
-   Records when account was created.
+    /*
+    Records when account was created.
 
-   Useful for:
+    Useful for:
 
-   • Analytics
-   • User history
-   • Auditing
-   */
-   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    • Analytics
+    • User history
+    • Auditing
+    */
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-   /*
-   Records latest modification time.
+    /*
+    Records latest modification time.
 
-   Automatically updated using triggers.
+    Automatically updated using triggers.
 
-   Useful for:
+    Useful for:
 
-   • Auditing
-   • Debugging
-   • Tracking changes
-   */
-   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
+    • Auditing
+    • Debugging
+    • Tracking changes
+    */
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-# /*
+/*
+===============================================================================
+TABLE: user_preferences
+===============================================================================
 
-# TABLE: user_preferences
-
-## PURPOSE
+PURPOSE
+-------
 
 Stores food-related preferences for a user.
 
@@ -226,7 +237,7 @@ Instead of recommending the same recipes to everyone,
 the AI reads this table and adapts recommendations
 according to the user's dietary needs and tastes.
 
-## WHY IS THIS A SEPARATE TABLE?
+WHY IS THIS A SEPARATE TABLE?
 
 The users table is responsible for:
 
@@ -244,7 +255,8 @@ This table is responsible for:
 Keeping them separate follows database normalization
 and makes the database easier to maintain.
 
-## REAL WORLD EXAMPLE
+REAL WORLD EXAMPLE
+------------------
 
 User:
 John Doe
@@ -262,7 +274,8 @@ The AI should:
 ✓ Prefer Italian dishes
 ✓ Scale recipes for 2 servings
 
-## RELATIONSHIP
+RELATIONSHIP
+------------
 
 users (1)
 │
@@ -270,194 +283,197 @@ users (1)
 
 One user can have only one preference profile.
 
-## BUSINESS RULES
+BUSINESS RULES
+--------------
 
 1. Every preference profile belongs to a valid user.
 2. A user can have only one preference profile.
 3. Preferences directly influence AI recipe generation.
 4. Allergies must always be respected when generating recipes.
-   ===============================================================================
-   */
+===============================================================================
+*/
 
 CREATE TABLE IF NOT EXISTS user_preferences(
 
 
-/*
-Unique identifier for this preference record.
+    /*
+    Unique identifier for this preference record.
 
-Even though this table belongs to a user,
-it still gets its own primary key.
+    Even though this table belongs to a user,
+    it still gets its own primary key.
 
-This makes future updates and relationships easier.
-*/
-id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    This makes future updates and relationships easier.
+    */
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-/*
-Connects this preference profile to a user.
+    /*
+    Connects this preference profile to a user.
 
-REFERENCES users(id)
-ensures the user must exist before preferences
-can be created.
+    REFERENCES users(id)
+    ensures the user must exist before preferences
+    can be created.
 
-ON DELETE CASCADE means:
+    ON DELETE CASCADE means:
 
-If a user account is deleted,
-automatically remove its preference profile.
+    If a user account is deleted,
+    automatically remove its preference profile.
 
-This prevents orphan records.
-*/
-user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    This prevents orphan records.
+    */
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
 
-/*
-Dietary restrictions followed by the user.
+    /*
+    Dietary restrictions followed by the user.
 
-Examples:
+    Examples:
 
-['vegetarian']
-['vegan']
-['keto']
-['gluten-free']
+    ['vegetarian']
+    ['vegan']
+    ['keto']
+    ['gluten-free']
 
-The AI checks this field before suggesting recipes.
+    The AI checks this field before suggesting recipes.
 
-Example:
+    Example:
 
-User = vegetarian
+    User = vegetarian
 
-AI should NOT suggest:
+    AI should NOT suggest:
 
-✗ Chicken Curry
-✗ Butter Chicken
+    ✗ Chicken Curry
+    ✗ Butter Chicken
 
-AI MAY suggest:
+    AI MAY suggest:
 
-✓ Paneer Curry
-✓ Veg Biryani
-*/
-dietary_restrictions TEXT[] DEFAULT '{}',
+    ✓ Paneer Curry
+    ✓ Veg Biryani
+    */
+    dietary_restrictions TEXT[] DEFAULT '{}',
 
-/*
-Food allergies that must be avoided.
+    /*
+    Food allergies that must be avoided.
 
-Examples:
+    Examples:
 
-['peanuts']
-['milk']
-['soy']
+    ['peanuts']
+    ['milk']
+    ['soy']
 
-This field is critical for food safety.
+    This field is critical for food safety.
 
-Example:
+    Example:
 
-User allergy = peanuts
+    User allergy = peanuts
 
-AI must never suggest recipes
-containing peanuts.
-*/
-allergies TEXT[] DEFAULT '{}',
+    AI must never suggest recipes
+    containing peanuts.
+    */
+    allergies TEXT[] DEFAULT '{}',
 
-/*
-User's favorite cuisines.
+    /*
+    User's favorite cuisines.
 
-Examples:
+    Examples:
 
-['Indian']
-['Italian']
-['Mexican']
+    ['Indian']
+    ['Italian']
+    ['Mexican']
 
-Used to personalize recipe recommendations.
+    Used to personalize recipe recommendations.
 
-Example:
+    Example:
 
-User likes Italian cuisine.
+    User likes Italian cuisine.
 
-AI may prioritize:
+    AI may prioritize:
 
-✓ Pasta
-✓ Lasagna
-✓ Risotto
+    ✓ Pasta
+    ✓ Lasagna
+    ✓ Risotto
 
-instead of random cuisines.
-*/
-preferred_cuisines TEXT[] DEFAULT '{}',
+    instead of random cuisines.
+    */
+    preferred_cuisines TEXT[] DEFAULT '{}',
 
-/*
-Default number of servings.
+    /*
+    Default number of servings.
 
-Example:
+    Example:
 
-User usually cooks for:
+    User usually cooks for:
 
-2 people
-4 people
-6 people
+    2 people
+    4 people
+    6 people
 
-AI can automatically scale ingredients
-according to this value.
+    AI can automatically scale ingredients
+    according to this value.
 
-Default = 4 servings.
-*/
-default_servings INT DEFAULT 4,
+    Default = 4 servings.
+    */
+    default_servings INT DEFAULT 4,
 
-/*
-Preferred measurement system.
+    /*
+    Preferred measurement system.
 
-metric:
-    grams
-    kilograms
-    liters
+    metric:
+        grams
+        kilograms
+        liters
 
-imperial:
-    ounces
-    pounds
-    cups
+    imperial:
+        ounces
+        pounds
+        cups
 
-This allows recipes to be displayed
-in a format familiar to the user.
-*/
-measurement_unit VARCHAR(20) DEFAULT 'metric',
+    This allows recipes to be displayed
+    in a format familiar to the user.
+    */
+    measurement_unit VARCHAR(20) DEFAULT 'metric',
 
-/*
-Records when preference profile
-was first created.
-*/
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    /*
+    Records when preference profile
+    was first created.
+    */
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-/*
-Records the last modification time.
+    /*
+    Records the last modification time.
 
-Automatically maintained using triggers.
-*/
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Automatically maintained using triggers.
+    */
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-/*
-Ensures one user can have only
-one preference profile.
+    /*
+    Ensures one user can have only
+    one preference profile.
 
-Without this constraint:
+    Without this constraint:
 
-User A
-  → Profile 1
-  → Profile 2
-  → Profile 3
+    User A
+      → Profile 1
+      → Profile 2
+      → Profile 3
 
-which creates ambiguity.
+    which creates ambiguity.
 
-This guarantees:
+    This guarantees:
 
-One User = One Preference Profile
-*/
-UNIQUE(user_id)
+    One User = One Preference Profile
+    */
+    UNIQUE(user_id)
 
 
 );
 
 
-# /*
+/*
+===============================================================================
+TABLE: pantry_items
+===============================================================================
 
-# TABLE: pantry_items
-
-## PURPOSE
+PURPOSE
+-------
 
 Stores all ingredients currently available in a user's kitchen.
 
@@ -469,7 +485,8 @@ the application stores available ingredients and quantities.
 The AI can use this information to generate recipes
 based on ingredients already available at home.
 
-## BUSINESS USE CASE
+BUSINESS USE CASE
+-----------------
 
 User's Pantry:
 
@@ -486,7 +503,8 @@ AI can generate:
 instead of suggesting recipes requiring ingredients
 the user does not currently possess.
 
-## BUSINESS BENEFITS
+BUSINESS BENEFITS
+-----------------
 
 • Reduces food waste
 • Saves grocery expenses
@@ -494,7 +512,8 @@ the user does not currently possess.
 • Enables smart shopping lists
 • Tracks expiring ingredients
 
-## RELATIONSHIP
+RELATIONSHIP
+------------
 
 users (1)
 │
@@ -502,163 +521,375 @@ users (1)
 
 One user can have many pantry items.
 
-## IMPORTANT RULES
+IMPORTANT RULES
+---------------
 
 1. Every pantry item belongs to a user.
 2. Quantities must be stored separately from units.
 3. Ingredients may have expiration dates.
 4. Low-stock ingredients can be identified automatically.
-   ===============================================================================
-   */
+===============================================================================
+*/
 
 CREATE TABLE IF NOT EXISTS pantry_items(
 
 
+    /*
+    Unique identifier for a pantry item.
+
+    Example:
+
+    Rice Record
+    Milk Record
+    Egg Record
+
+    Each receives its own UUID.
+    */
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    /*
+    Owner of this pantry item.
+
+    WHY?
+
+    Different users have different kitchens.
+
+    Rice belonging to User A should never appear
+    inside User B's pantry.
+
+    ON DELETE CASCADE ensures pantry data is removed
+    automatically when a user account is deleted.
+    */
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+
+    /*
+    Ingredient name.
+
+    Examples:
+
+    Rice
+    Milk
+    Tomatoes
+    Eggs
+    Paneer
+
+    This is usually the most frequently displayed field.
+    */
+    name VARCHAR(255) NOT NULL,
+
+    /*
+    Quantity currently available.
+
+    Examples:
+
+    5.00
+    2.50
+    0.75
+
+    Stored separately from unit.
+
+    This makes calculations easier.
+    */
+    quantity DECIMAL(10,2) NOT NULL,
+
+    /*
+    Measurement unit.
+
+    Examples:
+
+    kg
+    grams
+    liters
+    pieces
+
+    WHY SEPARATE FROM QUANTITY?
+
+    Good Design:
+
+    quantity = 5
+    unit = kg
+
+    Bad Design:
+
+    "5kg"
+
+    Separate fields allow filtering,
+    calculations and conversions.
+    */
+    unit VARCHAR(50) NOT NULL,
+
+    /*
+    Groups ingredients into categories.
+
+    Examples:
+
+    Dairy
+    Vegetables
+    Fruits
+    Grains
+    Spices
+
+    Useful for filtering pantry items
+    and improving user experience.
+    */
+    category VARCHAR(100) NOT NULL,
+
+    /*
+    Expiration date of ingredient.
+
+    Example:
+
+    Milk expires on:
+    2026-07-20
+
+    Enables:
+
+    • Expiry reminders
+    • Waste reduction
+    • Priority recipe generation
+    */
+    expiry_date DATE,
+
+    /*
+    Indicates whether inventory is running low.
+
+    Example:
+
+    Rice:
+    Quantity = 0.20 kg
+
+    System may automatically set:
+
+    is_running_low = true
+
+    Useful for shopping list generation.
+    */
+    is_running_low BOOLEAN DEFAULT FALSE,
+
+    /*
+    Stores when pantry item was added.
+    */
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    /*
+    Stores last modification time.
+
+    Updated automatically through triggers.
+    */
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+
+);
+
 /*
-Unique identifier for a pantry item.
+===============================================================================
+TABLE: recipes
+===============================================================================
 
-Example:
+PURPOSE
+-------
+Stores AI-generated recipes saved by users.
 
-Rice Record
-Milk Record
-Egg Record
+Each recipe contains metadata such as name, description,
+cuisine type, difficulty level, preparation and cooking times,
+serving count, structured instructions, dietary tags,
+user notes, and an optional image.
 
-Each receives its own UUID.
+BUSINESS USE CASE
+-----------------
+
+User requests:
+
+"Generate a vegetarian Italian pasta recipe"
+
+AI generates:
+
+    Name:        Creamy Penne Alfredo
+    Cuisine:     Italian
+    Difficulty:  easy
+    Prep Time:   10 minutes
+    Cook Time:   20 minutes
+    Servings:    4
+    Instructions: [step1, step2, ...]
+
+The recipe is stored in this table and can be:
+
+• Viewed later
+• Added to meal plans
+• Used to generate shopping lists
+• Rated and noted by the user
+
+RELATIONSHIP
+------------
+
+users (1)
+│
+└── recipes (many)
+    │
+    ├── recipe_ingredients (many)
+    └── recipe_nutrition (1)
+
+One user can have many saved recipes.
+Each recipe can have many ingredients and one nutrition record.
+
+IMPORTANT RULES
+---------------
+
+1. Every recipe belongs to a user.
+2. Difficulty must be one of: easy, medium, hard.
+3. Instructions are stored as JSONB for flexible structure.
+4. Dietary tags use a PostgreSQL array for multi-value support.
+===============================================================================
 */
-id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-/*
-Owner of this pantry item.
+CREATE TABLE IF NOT EXISTS recipes(
 
-WHY?
+    /*
+    Unique identifier for each recipe.
 
-Different users have different kitchens.
+    Example:
 
-Rice belonging to User A should never appear
-inside User B's pantry.
+    550e8400-e29b-41d4-a716-446655440000
+    */
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-ON DELETE CASCADE ensures pantry data is removed
-automatically when a user account is deleted.
-*/
-user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    /*
+    Owner of this recipe.
 
-/*
-Ingredient name.
+    Links recipe back to the user who generated/saved it.
 
-Examples:
+    ON DELETE CASCADE ensures all recipes are removed
+    automatically if the user account is deleted.
+    */
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
 
-Rice
-Milk
-Tomatoes
-Eggs
-Paneer
+    /*
+    Recipe name / title.
 
-This is usually the most frequently displayed field.
-*/
-name VARCHAR(255) NOT NULL,
+    Examples:
 
-/*
-Quantity currently available.
+    Creamy Penne Alfredo
+    Veg Biryani
+    Chocolate Lava Cake
+    */
+    name VARCHAR(255) NOT NULL,
 
-Examples:
+    /*
+    Brief description of the recipe.
 
-5.00
-2.50
-0.75
+    Example:
 
-Stored separately from unit.
+    "A rich and creamy Italian pasta dish
+     made with parmesan and butter."
+    */
+    description TEXT,
 
-This makes calculations easier.
-*/
-quantity DECIMAL(10,2) NOT NULL,
+    /*
+    Type of cuisine.
 
-/*
-Measurement unit.
+    Examples:
 
-Examples:
+    Italian
+    Indian
+    Mexican
+    Chinese
+    */
+    cuisine_type VARCHAR(100),
 
-kg
-grams
-liters
-pieces
+    /*
+    Difficulty level of the recipe.
 
-WHY SEPARATE FROM QUANTITY?
+    Allowed values:
 
-Good Design:
+    easy
+    medium
+    hard
 
-quantity = 5
-unit = kg
+    CHECK constraint prevents invalid values.
+    */
+    difficulty VARCHAR(20) CHECK (difficulty IN ('easy','medium','hard')),
 
-Bad Design:
+    /*
+    Time required for preparation (in minutes).
 
-"5kg"
+    Example:
 
-Separate fields allow filtering,
-calculations and conversions.
-*/
-unit VARCHAR(50) NOT NULL,
+    10 (minutes)
+    */
+    prep_time INT,
 
-/*
-Groups ingredients into categories.
+    /*
+    Time required for cooking (in minutes).
 
-Examples:
+    Example:
 
-Dairy
-Vegetables
-Fruits
-Grains
-Spices
+    20 (minutes)
+    */
+    cook_time INT,
 
-Useful for filtering pantry items
-and improving user experience.
-*/
-category VARCHAR(100) NOT NULL,
+    /*
+    Number of servings the recipe yields.
 
-/*
-Expiration date of ingredient.
+    Default = 4 servings.
+    */
+    servings INT DEFAULT 4,
 
-Example:
+    /*
+    Step-by-step cooking instructions.
 
-Milk expires on:
-2026-07-20
+    Stored as JSONB for flexible structure.
 
-Enables:
+    Example:
 
-• Expiry reminders
-• Waste reduction
-• Priority recipe generation
-*/
-expiry_date DATE,
+    [
+        {"step": 1, "text": "Boil pasta in salted water."},
+        {"step": 2, "text": "Prepare the sauce."},
+        {"step": 3, "text": "Combine and serve."}
+    ]
+    */
+    instructions JSONB,
 
-/*
-Indicates whether inventory is running low.
+    /*
+    Dietary tags associated with the recipe.
 
-Example:
+    Examples:
 
-Rice:
-Quantity = 0.20 kg
+    {'vegetarian', 'gluten-free'}
+    {'vegan', 'low-carb'}
 
-System may automatically set:
+    Stored as a PostgreSQL text array for multi-value support.
+    */
+    dietary_tags TEXT[] DEFAULT '{}',
 
-is_running_low = true
+    /*
+    User's personal notes about the recipe.
 
-Useful for shopping list generation.
-*/
-is_running_low BOOLEAN DEFAULT FALSE,
+    Example:
 
-/*
-Stores when pantry item was added.
-*/
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "Added extra garlic last time, turned out great!"
+    */
+    user_notes TEXT,
 
-/*
-Stores last modification time.
+    /*
+    URL to the recipe image.
 
-Updated automatically through triggers.
-*/
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    Example:
 
+    "https://example.com/images/pasta.jpg"
+    */
+    image_url TEXT,
 
+    /*
+    Records when recipe was first saved.
+    */
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    /*
+    Records latest modification time.
+
+    Automatically updated using triggers.
+    */
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 /*
@@ -751,6 +982,131 @@ CREATE TABLE IF NOT EXISTS recipe_ingredients(
     */
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+/*
+===============================================================================
+TABLE: recipe_nutrition
+===============================================================================
+
+PURPOSE
+-------
+Stores nutritional information for a recipe.
+
+Each recipe can have one nutrition record containing
+calorie count and macronutrient breakdown.
+
+This data is typically generated by the AI alongside
+the recipe itself.
+
+BUSINESS USE CASE
+-----------------
+
+Recipe: Creamy Penne Alfredo
+
+    Calories: 450.00
+    Protein:  18.50 g
+    Carbs:    52.00 g
+    Fats:     20.00 g
+    Fiber:     3.50 g
+
+Users can use this information to:
+
+• Track calorie intake
+• Plan balanced meals
+• Meet dietary goals
+
+RELATIONSHIP
+------------
+
+recipes (1)
+    │
+    └── recipe_nutrition (1)
+
+One recipe has exactly one nutrition record.
+
+IMPORTANT RULES
+---------------
+
+1. Every nutrition record belongs to a recipe.
+2. UNIQUE(recipe_id) ensures one-to-one relationship.
+3. If recipe is deleted, nutrition data is removed too.
+===============================================================================
+*/
+
+CREATE TABLE IF NOT EXISTS recipe_nutrition(
+
+    /*
+    Unique identifier for the nutrition record.
+    */
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    /*
+    Links nutrition data to a recipe.
+
+    ON DELETE CASCADE ensures nutrition data
+    is automatically removed when the recipe is deleted.
+    */
+    recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE,
+
+    /*
+    Total calories per serving.
+
+    Example:
+
+    450.00
+    */
+    calories DECIMAL(10,2),
+
+    /*
+    Protein content in grams.
+
+    Example:
+
+    18.50
+    */
+    protein DECIMAL(10,2),
+
+    /*
+    Carbohydrate content in grams.
+
+    Example:
+
+    52.00
+    */
+    carbs DECIMAL(10,2),
+
+    /*
+    Fat content in grams.
+
+    Example:
+
+    20.00
+    */
+    fats DECIMAL(10,2),
+
+    /*
+    Fiber content in grams.
+
+    Example:
+
+    3.50
+    */
+    fiber DECIMAL(10,2),
+
+    /*
+    Records when nutrition data was created.
+    */
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    /*
+    Ensures one recipe has exactly one nutrition record.
+
+    Without this constraint a recipe could accumulate
+    multiple conflicting nutrition entries.
+    */
+    UNIQUE(recipe_id)
+);
+
 /*
 ===============================================================================
 TABLE: meal_plans
@@ -1095,6 +1451,19 @@ CREATE TABLE IF NOT EXISTS shopping_list_items(
     is_checked BOOLEAN DEFAULT FALSE,
 
     /*
+    Indicates whether this shopping list item
+    was generated from a meal plan.
+
+    false = manually added by the user
+
+    true = auto-generated from a meal plan
+
+    Default is FALSE because most items
+    are added manually.
+    */
+    from_meal_plan BOOLEAN DEFAULT FALSE,
+
+    /*
     Records when shopping item was created.
 
     Useful for tracking and analytics.
@@ -1184,6 +1553,41 @@ Indexes are added on columns that are frequently used in:
 ===============================================================================
 */
 
+-- Index on pantry_items.user_id
+-- Speeds up queries like: SELECT * FROM pantry_items WHERE user_id = ?
+CREATE INDEX IF NOT EXISTS idx_pantry_items_user_id
+ON pantry_items(user_id);
+
+-- Index on recipes.user_id
+-- Speeds up queries like: SELECT * FROM recipes WHERE user_id = ?
+CREATE INDEX IF NOT EXISTS idx_recipes_user_id
+ON recipes(user_id);
+
+-- Index on recipe_ingredients.recipe_id
+-- Speeds up queries like: SELECT * FROM recipe_ingredients WHERE recipe_id = ?
+CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id
+ON recipe_ingredients(recipe_id);
+
+-- Index on meal_plans.user_id
+-- Speeds up queries like: SELECT * FROM meal_plans WHERE user_id = ?
+CREATE INDEX IF NOT EXISTS idx_meal_plans_user_id
+ON meal_plans(user_id);
+
+-- Index on meal_plans.recipe_id
+-- Speeds up joining meal plans with recipes
+CREATE INDEX IF NOT EXISTS idx_meal_plans_recipe_id
+ON meal_plans(recipe_id);
+
+-- Index on meal_plans.meal_date
+-- Speeds up date-based queries for meal planning
+CREATE INDEX IF NOT EXISTS idx_meal_plans_meal_date
+ON meal_plans(meal_date);
+
+-- Index on shopping_list_items.user_id
+-- Speeds up queries like: SELECT * FROM shopping_list_items WHERE user_id = ?
+CREATE INDEX IF NOT EXISTS idx_shopping_list_items_user_id
+ON shopping_list_items(user_id);
+
 
 /*
 ===============================================================================
@@ -1245,7 +1649,7 @@ Step 2:
 A trigger runs automatically.
 
 Step 3:
-This function executes.
+update_updated_at_column() Runs
 
 Step 4:
 updated_at is replaced with the current timestamp.
@@ -1424,3 +1828,45 @@ BENEFITS
 
 ===============================================================================
 */
+
+-- Trigger for users table
+-- Automatically updates updated_at when a user record is modified
+CREATE OR REPLACE TRIGGER update_users_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for user_preferences table
+-- Automatically updates updated_at when preferences are modified
+CREATE OR REPLACE TRIGGER update_user_preferences_updated_at
+BEFORE UPDATE ON user_preferences
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for pantry_items table
+-- Automatically updates updated_at when pantry items are modified
+CREATE OR REPLACE TRIGGER update_pantry_items_updated_at
+BEFORE UPDATE ON pantry_items
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for recipes table
+-- Automatically updates updated_at when a recipe is modified
+CREATE OR REPLACE TRIGGER update_recipes_updated_at
+BEFORE UPDATE ON recipes
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for meal_plans table
+-- Automatically updates updated_at when a meal plan is modified
+CREATE OR REPLACE TRIGGER update_meal_plans_updated_at
+BEFORE UPDATE ON meal_plans
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for shopping_list_items table
+-- Automatically updates updated_at when a shopping list item is modified
+CREATE OR REPLACE TRIGGER update_shopping_list_items_updated_at
+BEFORE UPDATE ON shopping_list_items
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

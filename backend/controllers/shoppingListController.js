@@ -63,14 +63,14 @@ export const addItem = async (req, res, next) => {
 
 // update shopping list item
 
-export const updateIem = async (req, req, next) => {
+export const updateItem = async (req, res, next) => {
     try {
         const { id } = req.params;
         const item = await ShoppingList.update(id, req.user.id, req.body);
 
         if (!item) {
             return res.status(404).json({
-                success: true,
+                success: false,
                 message: 'Shopping list item not found'
             })
         }

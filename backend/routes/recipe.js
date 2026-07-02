@@ -9,7 +9,7 @@ recipeRouter.use(authMiddleware);
 
 // AI generation
 recipeRouter.post('/generate',recipeController.generateRecipe);
-recipeController.get('/suggestions',recipeController.getPantrySuggestions);
+recipeRouter.get('/suggestions',recipeController.getPantrySuggestions);
 
 // CRUD operations
 

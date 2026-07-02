@@ -55,12 +55,12 @@ class PantryItem {
 
     static async getExpiringSoon(userId, days = 7) {
         const result = await db.query(
-            `SELECT *FROM pantry_items WHERE user_id =$1
+            `SELECT * FROM pantry_items WHERE user_id =$1
             AND expiry_date is NOT NULL
-            AND expiry_date <=CURRENT_DATE + INTERVAL '${days} days'
+            AND expiry_date <=CURRENT_DATE + ($2 || ' days')::INTERVAL
             AND expiry_date >=CURRENT_DATE
             ORDER BY expiry_date ASC`,
-            [userId]
+            [userId, days]
 
         )
         return result.rows;

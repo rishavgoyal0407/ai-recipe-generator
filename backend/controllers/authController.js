@@ -125,7 +125,7 @@ export const getCurrentUser = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                messages: 'User not found'
+                message: 'User not found'
             })
         }
 
@@ -142,7 +142,8 @@ export const getCurrentUser = async (req, res, next) => {
 
 
 // request for password reset
-
+// TODO: Implement actual password reset logic — currently a placeholder.
+// Needs: generate reset token, save to DB with expiry, send email with reset link.
 export const requestPasswordReset = async (req, res, next) => {
 
     try {
