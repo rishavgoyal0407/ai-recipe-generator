@@ -148,4 +148,18 @@ export const clearAll =async (req,res,next) => {
   }
 }
 
+// add  checked items to pantry
+
+export const addCheckedToPantry=async (req,res,next) => {
+  try {
+    const items=await ShoppingList.addCheckedToPantry(req.user.id);
+    res.json({
+        success:true,
+        message:'Checked items added to pantry',
+        data:{items}
+    })
+  } catch (error) {
+    next(error);
+  }
+}
 
