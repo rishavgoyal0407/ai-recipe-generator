@@ -7,6 +7,10 @@ import cors from 'cors'
 
 import authRouter from './routes/auth.js';
 import router from './routes/user.js';
+import pantryRouter from './routes/pantry.js';
+import recipeRouter from './routes/recipe.js';
+import mealRouter from './routes/mealPlan.js';
+import shoppingRouter from './routes/shoppingList.js';
 
 
 const app=express();
@@ -24,6 +28,10 @@ app.get('/',(req,res) => {
 
 app.use('/api/auth',authRouter);
 app.use('/api/users',router);
+app.use('/api/pantry',pantryRouter);
+app.use('/api/recipes',recipeRouter);
+app.use('/api/meal-plans',mealRouter);
+app.use('/api/shopping-list',shoppingRouter);
 
 const PORT=process.env.PORT || 8000;
 

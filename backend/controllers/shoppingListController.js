@@ -132,6 +132,23 @@ export const deleteItem = async (req, res, next) => {
     }
 };
 
+// clear checked items
+
+export const clearChecked=async (req,res,next) => {
+  try {
+    const items=await ShoppingList.clearChecked(req.user.id);
+
+    res.json({
+        success:true,
+        message:'Checked items cleared',
+        data:{items}
+    })
+  } catch (error) {
+    next(error);
+  }
+}
+
+
 // clear all items
 
 export const clearAll =async (req,res,next) => {
